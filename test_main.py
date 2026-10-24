@@ -1,7 +1,9 @@
+import logging
 import os
 import sys
 import types
 import unittest
+import urllib.error
 from contextlib import redirect_stdout
 from datetime import datetime
 from io import StringIO
@@ -190,6 +192,48 @@ class TelegramSendTests(unittest.TestCase):
             send_telegram("token", "123", "Daily result")
 
         self.assertEqual(output.getvalue(), "")
+
+    def test_telegram_network_errors_do_not_expose_token_or_chat_id(self):
+        from main import send_telegram
+
+        token = "secret-token"
+        chat_id = "private-chat-id"
+        network_error = urllib.error.URLError(
+            "https://api.telegram.org/bot{}/sendMessage chat_id={}".format(
+                token, chat_id
+            )
+        )
+        with patch("main.urllib.request.urlopen", side_effect=network_error):
+            with self.assertRaisesRegex(RuntimeError, "Telegram send failed") as raised:
+                send_telegram(token, chat_id, "Daily result")
+
+        self.assertNotIn(token, str(raised.exception))
+        self.assertNotIn(chat_id, str(raised.exception))
+        self.assertIsNone(raised.exception.__cause__)
+        self.assertTrue(raised.exception.__suppress_context__)
+
+    def test_telegram_retry_logs_do_not_expose_credentials(self):
+        token = "secret-token"
+        chat_id = "private-chat-id"
+        output = StringIO()
+        handler = logging.StreamHandler(output)
+        logger = logging.getLogger()
+        logger.addHandler(handler)
+        try:
+            with (
+                patch(
+                    "main.send_telegram",
+                    side_effect=RuntimeError("{} {}".format(token, chat_id)),
+                ),
+                patch("main.time_module.sleep"),
+                self.assertRaisesRegex(RuntimeError, "failed after 6 attempts"),
+            ):
+                send_telegram_with_retries(token, chat_id, "Daily result")
+        finally:
+            logger.removeHandler(handler)
+
+        self.assertNotIn(token, output.getvalue())
+        self.assertNotIn(chat_id, output.getvalue())
 
     def test_retries_telegram_send_until_success(self):
         with (

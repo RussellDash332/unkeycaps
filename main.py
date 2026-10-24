@@ -366,14 +366,12 @@ def play_daily_with_retries(headless, candidates):
     ) from last_error
 
 def send_telegram_with_retries(token, chat_id, message):
-    last_error = None
     for attempt in range(1, MAX_ATTEMPTS + 1):
         try:
             send_telegram(token, chat_id, message)
             return
-        except RuntimeError as error:
-            last_error = error
-            logging.exception(
+        except RuntimeError:
+            logging.warning(
                 "Telegram delivery failed on attempt %s of %s.",
                 attempt,
                 MAX_ATTEMPTS,
@@ -386,7 +384,7 @@ def send_telegram_with_retries(token, chat_id, message):
         "Telegram delivery failed after {} attempts.".format(
             MAX_ATTEMPTS
         )
-    ) from last_error
+    )
 
 def parse_result(text, words):
     date_match = re.search(
@@ -505,14 +503,10 @@ def send_telegram(token, chat_id, message):
     try:
         with urllib.request.urlopen(request, timeout=20) as response:
             result = json.loads(response.read().decode("utf-8"))
-    except (OSError, urllib.error.URLError) as error:
-        raise RuntimeError("Telegram send failed.") from error
+    except (OSError, urllib.error.URLError):
+        raise RuntimeError("Telegram send failed.") from None
     if not result.get("ok"):
-        raise RuntimeError(
-            "Telegram rejected the message: {}".format(
-                result.get("description", "unknown error")
-            )
-        )
+        raise RuntimeError("Telegram rejected the message.")
 
 def main():
     if hasattr(sys.stdout, "reconfigure"):
@@ -560,8 +554,8 @@ def main():
             try:
                 send_telegram_with_retries(token, chat_id, message)
                 logging.info("Telegram delivery succeeded.")
-            except RuntimeError as error:
-                errors.append(str(error))
+            except RuntimeError:
+                errors.append("Telegram delivery failed.")
         if errors:
             raise RuntimeError("; ".join(errors))
     elif not args.no_telegram:
