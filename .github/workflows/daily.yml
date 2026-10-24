@@ -1,0 +1,35 @@
+name: daily unkeycaps
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 14 * * *" # 10:00 PM Singapore time (UTC+8), then wait for midnight
+
+permissions:
+  contents: read
+
+jobs:
+  unkeycaps:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Wait until midnight Singapore time
+        if: github.event_name == 'schedule'
+        run: python -c "from main import wait_until_singapore_midnight; wait_until_singapore_midnight()"
+
+      - name: Play and share the Daily
+        run: python main.py --headless --require-telegram
+        env:
+          TOKEN: ${{ secrets.TOKEN }}
+          CHATS: ${{ secrets.CHATS }}
