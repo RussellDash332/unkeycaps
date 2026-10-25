@@ -103,8 +103,8 @@ def make_browser(headless):
     return browser
 
 def midnight_wait_seconds(now):
-    """Wait only for scheduled runs launched in the 10 PM pre-midnight window."""
-    if now.hour < 22:
+    """Wait only for scheduled runs launched in the 8 PM pre-midnight window."""
+    if now.hour < 20:
         return 0
     next_midnight = datetime.combine(
         now.date() + timedelta(days=1),

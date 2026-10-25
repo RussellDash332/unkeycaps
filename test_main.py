@@ -37,11 +37,13 @@ from main import (
 
 class WordSelectionTests(unittest.TestCase):
     def test_midnight_wait_avoids_rewaiting_after_daily_boundary(self):
-        before_midnight = datetime(2026, 10, 25, 22, 0, tzinfo=SINGAPORE_TIMEZONE)
+        before_window = datetime(2026, 10, 25, 19, 59, tzinfo=SINGAPORE_TIMEZONE)
+        before_midnight = datetime(2026, 10, 25, 20, 0, tzinfo=SINGAPORE_TIMEZONE)
         after_midnight = datetime(2026, 10, 26, 0, 30, tzinfo=SINGAPORE_TIMEZONE)
         daytime = datetime(2026, 10, 26, 10, 0, tzinfo=SINGAPORE_TIMEZONE)
 
-        self.assertEqual(midnight_wait_seconds(before_midnight), 2 * 60 * 60)
+        self.assertEqual(midnight_wait_seconds(before_window), 0)
+        self.assertEqual(midnight_wait_seconds(before_midnight), 4 * 60 * 60)
         self.assertEqual(midnight_wait_seconds(after_midnight), 0)
         self.assertEqual(midnight_wait_seconds(daytime), 0)
 

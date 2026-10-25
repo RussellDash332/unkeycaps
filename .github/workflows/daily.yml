@@ -3,7 +3,7 @@ name: daily unkeycaps
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 14 * * *" # 10:00 PM Singapore time (UTC+8), then wait for midnight
+    - cron: "0 12 * * *" # 8:00 PM SGT, then wait 4 hours for midnight
 
 permissions:
   contents: read
