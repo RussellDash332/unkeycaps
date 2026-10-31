@@ -30,10 +30,11 @@ BOARD_SIZE = 5
 WAIT_SECONDS = 3.5
 START_WAIT_SECONDS = 20
 SUBMISSION_WAIT_SECONDS = 1.3
-WORD_ATTEMPTS = 2
+WORD_ATTEMPTS = 1
 MAX_ATTEMPTS = 6
 RETRY_DELAY_SECONDS = 2.5
 SINGAPORE_TIMEZONE = ZoneInfo("Asia/Singapore")
+TOP_K = 10
 
 SCORES = {
     "A": 1, "B": 3, "C": 3, "D": 2, "E": 1, "F": 4, "G": 2,
@@ -65,7 +66,7 @@ class DailyResult:
 def word_score(word):
     return sum(SCORES[letter] for letter in word)
 
-def best_words_by_pair(lines, limit=5):
+def best_words_by_pair(lines, limit=TOP_K):
     """Keep the highest-scoring, shortest-tied words for each start/end pair."""
     words_by_pair = defaultdict(list)
     seen = set()
@@ -73,6 +74,7 @@ def best_words_by_pair(lines, limit=5):
         word = raw_word.strip().upper()
         if (
             len(word) < 3
+            or len(word) > 20
             or word in seen
             or not word.isalpha()
             or any(c not in SCORES for c in word)
