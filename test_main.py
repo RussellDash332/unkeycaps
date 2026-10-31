@@ -76,15 +76,37 @@ class WordSelectionTests(unittest.TestCase):
         self.assertEqual(len(result[("A", "Z")]), 2)
 
     def test_word_list_is_always_downloaded_from_configured_url(self):
-        response = Mock()
-        response.__enter__ = Mock(return_value=[b"ABZ\n"])
-        response.__exit__ = Mock(return_value=False)
-        with patch("main.urllib.request.urlopen", return_value=response) as urlopen:
+        responses = []
+        for contents in ([b"ABZ\n"], [b"ANTHROPOMORPHICALLY\n", b"ABZ\n"]):
+            response = Mock()
+            response.__enter__ = Mock(return_value=contents)
+            response.__exit__ = Mock(return_value=False)
+            responses.append(response)
+
+        with patch("main.urllib.request.urlopen", side_effect=responses) as urlopen:
             result = load_word_list()
 
-        request = urlopen.call_args.args[0]
-        self.assertEqual(request.full_url, WORD_LIST_URL)
+        self.assertEqual(
+            [call.args[0].full_url for call in urlopen.call_args_list],
+            WORD_LIST_URL,
+        )
         self.assertIn(("A", "Z"), result)
+        self.assertEqual(
+            sum(
+                word.text == "ANTHROPOMORPHICALLY"
+                for words in result.values()
+                for word in words
+            ),
+            1,
+        )
+        self.assertEqual(
+            sum(
+                word.text == "ABZ"
+                for words in result.values()
+                for word in words
+            ),
+            1,
+        )
 
 
 class ShareMessageTests(unittest.TestCase):

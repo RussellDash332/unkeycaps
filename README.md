@@ -11,7 +11,7 @@ python -m pip install -r requirements.txt
 ```
 
 Chrome must be installed. Selenium Manager obtains the matching ChromeDriver.
-Each run downloads the word list from the SOWPODS URL in `main.py`.
+Each run merges all the English word lists configured in `main.py`.
 
 ## Run
 

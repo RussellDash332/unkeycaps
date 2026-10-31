@@ -21,7 +21,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 
-WORD_LIST_URL = "https://raw.githubusercontent.com/jesstess/Scrabble/master/scrabble/sowpods.txt"
+WORD_LIST_URL = [
+    "https://raw.githubusercontent.com/jesstess/Scrabble/master/scrabble/sowpods.txt",
+    "https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt",
+]
 DAILY_URL = "https://keyca.ps/"
 BOARD_SIZE = 5
 WAIT_SECONDS = 3.5
@@ -65,10 +68,17 @@ def word_score(word):
 def best_words_by_pair(lines, limit=5):
     """Keep the highest-scoring, shortest-tied words for each start/end pair."""
     words_by_pair = defaultdict(list)
+    seen = set()
     for raw_word in lines:
         word = raw_word.strip().upper()
-        if len(word) < 3 or not word.isalpha() or any(c not in SCORES for c in word):
+        if (
+            len(word) < 3
+            or word in seen
+            or not word.isalpha()
+            or any(c not in SCORES for c in word)
+        ):
             continue
+        seen.add(word)
         pair = (word[0], word[-1])
         words_by_pair[pair].append(Word(word, word_score(word)))
 
@@ -78,16 +88,20 @@ def best_words_by_pair(lines, limit=5):
     }
 
 def load_word_list():
-    request = urllib.request.Request(
-        WORD_LIST_URL,
-        headers={"User-Agent": "unkeycaps/1.0"},
-    )
-    try:
-        with urllib.request.urlopen(request, timeout=30) as response:
-            lines = (line.decode("utf-8").strip() for line in response)
-            return best_words_by_pair(lines)
-    except (OSError, urllib.error.URLError) as error:
-        raise RuntimeError("Could not download the word list from {}.".format(WORD_LIST_URL)) from error
+    lines = []
+    for url in WORD_LIST_URL:
+        request = urllib.request.Request(
+            url,
+            headers={"User-Agent": "unkeycaps/1.0"},
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                lines.extend(line.decode("utf-8").strip() for line in response)
+        except (OSError, urllib.error.URLError) as error:
+            raise RuntimeError(
+                "Could not download the word list from {}.".format(url)
+            ) from error
+    return best_words_by_pair(lines)
 
 def make_browser(headless):
     options = webdriver.ChromeOptions()
