@@ -24,6 +24,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 WORD_LIST_URL = [
     "https://raw.githubusercontent.com/jesstess/Scrabble/master/scrabble/sowpods.txt",
     "https://raw.githubusercontent.com/dolph/dictionary/refs/heads/master/enable1.txt",
+    'https://raw.githubusercontent.com/robotdana/spellr/refs/heads/main/wordlists/english/US.txt'
 ]
 DAILY_URL = "https://keyca.ps/"
 BOARD_SIZE = 5
